@@ -26,7 +26,6 @@ class LearningAgent(Agent):
         self.trialNum = 0
         self.epsilon_decay = epsilon
         self.alpha_decay = alpha
-        
 
 
 
@@ -46,21 +45,26 @@ class LearningAgent(Agent):
         # If 'testing' is True, set epsilon and alpha to 0
 
 
+        #self.epsilon = self.epsilon - 0.05
+
+        '''ParmA = -5E-11
+        ParmB = 0.104
+        ParmC = 210
+
+        self.epsilon = 1* math.exp(-ParmA *trialNum)/( 1 + math.exp(ParmB * (trialNum - ParmC)))
+        '''
+
+
         if testing:
-            self.epsilon = 0.0
-            self.alpha = 0.0
+            self.epsilon = 0
+            self.alpha = 0
 
         else:
-            # check different epsilon values here
-            #self.epsilon = self.epsilon - 0.05  // this is for second graph
-            #self.epsilon = math.exp(-0.002*self.trialNum)
-            
-            self.epsilon = math.exp(-0.01*self.trialNum)
-            #self.epsilon -= 0.00001*self.trialNumber
-            
+            self.epsilon = math.exp(-0.002*self.trialNum)
+
             self.trialNum = self.trialNum + 1
 
-            #self.alpha = self.alpha_decay/(1 + 0.007*self.trialNum)
+            self.alpha = self.alpha_decay/(1 + 0.007*self.trialNum)
 
 
 
@@ -133,7 +137,7 @@ class LearningAgent(Agent):
         # Set the agent state and default action
         self.state = state
         self.next_waypoint = self.planner.next_waypoint()
-        action = None
+        #action = random.choice(self.valid_actions), # no learning ; first part
 
         ########### 
         ## TO DO ##
@@ -143,35 +147,22 @@ class LearningAgent(Agent):
         # Otherwise, choose an action with the highest Q-value for the current state
         # Be sure that when choosing an action with highest Q-value that you randomly select between actions that "tie".
         
-        '''if not self.learning: 
-            action = random.choice(self.valid_actions)
-        # learning, choose with epsilon probability
-        else: 
-            if self.epsilon > 0.01 and self.epsilon > random.random(): 
+        # get Q value
+        maxQ = self.get_maxQ(state)
+
+        action_dict = self.Q[state]
+
+        action = action_dict.keys()[action_dict.values().index(maxQ)]
+
+        if self.learning:
+            random_db = random.random()
+            if random_db < self.epsilon:
                 action = random.choice(self.valid_actions)
-            else:
-                valid_actions = []
-                maxQ = self.get_maxQ(state)
-                for act in self.Q[state]: 
-                    if self.Q[state][act] == maxQ: 
-                        valid_actions.append(act)
-                action = random.choice(valid_actions)                
-        return action'''
-        
-        if not self.learning: 
-            action = random.choice(self.valid_actions)
-        # learning, choose with epsilon probability
-        else: 
-            if random.random() < self.epsilon: 
-                action = random.choice(self.valid_actions)
-            else: 
-                maxQ = self.get_maxQ(state)
-                actions_with_maxQ = []
-                for act in self.valid_actions: 
-                    if self.Q[state][act] == maxQ: 
-                        actions_with_maxQ.append(act)
-                action = random.choice(actions_with_maxQ)                
+        else:
+            print ('not learning')
+
         return action
+
 
     def learn(self, state, action, reward):
         """ The learn function is called after the agent completes an action and
@@ -222,7 +213,7 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent, learning = True, alpha = 0.6, epsilon = 1)
+    agent = env.create_agent(LearningAgent, learning = True, alpha = 0.95)
     
     ##############
     # Follow the driving agent
@@ -244,7 +235,7 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05 
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test = 10, tolerance = 0.01)
+    sim.run(n_test = 10, tolerance = 0.027)
 
 
 if __name__ == '__main__':
